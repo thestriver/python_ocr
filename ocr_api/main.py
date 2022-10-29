@@ -17,12 +17,14 @@ def home():
 async def extract_text(Images: List[UploadFile] = File(...)):
     response = {}
     s = time.time()
+    tasks = []
     for img in Images:
         print("Images Uploaded: ", img.filename)
         temp_file = utils._save_file_to_server(
             img, path="./", save_as=img.filename)
-        text = await ocr.read_image(temp_file)
-        response[img.filename] = text
+        tasks.append(asyncio.create_task(ocr.read_image(temp_file)))
+    text = await asyncio.gather(*tasks)
+    for i in range(len(text)):
+        response[Images[i].filename] = text[i]
     response["Time Taken"] = round((time.time() - s), 2)
-
     return response
